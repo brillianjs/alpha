@@ -398,6 +398,8 @@ sts="${Info}"
 else
 sts="${Error}"
 fi
+}
+
 clear
 # Pasang SSL
 function pasang_ssl() {
