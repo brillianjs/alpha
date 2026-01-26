@@ -31,10 +31,10 @@ fun_bar() {
 }
 res1() {
     cd /root
-    rm -rf hokage.sh
+    rm -rf brilltunnel.sh
     cd /usr/bin
-    rm -rf hokage
-    rm -rf hokage.zip
+    rm -rf brilltunnel
+    rm -rf brilltunnel.zip
     rm -rf bot
     rm -rf bot.zip
     rm -rf bot-backup

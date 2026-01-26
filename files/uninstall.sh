@@ -2,11 +2,11 @@
 
 echo ""
 echo "#########################################################"
-echo "## -> HOKAGE LEGEND-Server by HOKAGE-ID Software       ##"
-echo "## -> Author : Hokage Legend                           ##"
+echo "## -> BrillTunnel-Server by BRILLTUNNEL-ID Software       ##"
+echo "## -> Author : BrillTunnel                           ##"
 echo "## -> Email : brillianjs@gmail.com               ##"
 echo "## -> Wa    : 087726917005                             ##"
-echo "## -> (c) 2023-2024, Hokage Legend-ID Software         ##"
+echo "## -> (c) 2023-2024, BrillTunnel-ID Software         ##"
 echo "#########################################################"
 echo ""
 

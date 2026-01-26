@@ -15,7 +15,7 @@ echo -e "\e[32mloading...\e[0m"
 clear
 IP=$(wget -qO- icanhazip.com)
 dateToday=$(date +"%Y-%m-%d")
-Name=$(curl https://raw.githubusercontent.com/brillianjs/ijin/main/alpha | grep $MYIP | awk '{print $2}')
+Name="Admin"
 
 setup_bot() {
     switch=$(grep -i "switch" /root/.bckupbot | awk '{print $2}')
@@ -37,7 +37,7 @@ botBackup() {
     echo -e "[ ${green}INFO${NC} ] Create password for database"
 	read -t 10 -p "Enter password : "  InputPass
 	if [[ -z $InputPass ]]; then
-	InputPass="hokagevpnpassword"
+	InputPass="brilltunnelvpnpassword"
 	fi
 	sleep 1
     echo -e "[ ${green}INFO${NC} ] • VPS Data Backup... "
@@ -68,7 +68,7 @@ botBackup() {
 	cp /etc/gshadow backup/ &>/dev/null
 	echo -e "[ ${green}INFO${NC} ] • Backup gshadow data..."
 	sleep 1
-    cp -r /var/lib/hokage/ backup/hokage &>/dev/null
+    cp -r /var/lib/brilltunnel/ backup/brilltunnel &>/dev/null
     cp -r /etc/xray backup/xray &>/dev/null
     cp -r /var/www/html backup/html &>/dev/null
 	echo -e "[ ${green}INFO${NC} ] • Backup user data..."
@@ -76,10 +76,10 @@ botBackup() {
     cp /etc/vmess/* backup/vmess/quota/ &>/dev/null
     cp /etc/vless/* backup/vless/quota/ &>/dev/null
     cp /etc/trojan/* backup/trojan/quota/ &>/dev/null
-    cp /etc/hokage/limit/vmess/ip/* backup/vmess/ip/ &>/dev/null
-    cp /etc/hokage/limit/vless/ip/* backup/vless/ip/ &>/dev/null
-    cp /etc/hokage/limit/trojan/ip/* backup/trojan/ip/ &>/dev/null
-    cp /etc/hokage/limit/ssh/ip/* backup/ssh/ip/ &>/dev/null
+    cp /etc/brilltunnel/limit/vmess/ip/* backup/vmess/ip/ &>/dev/null
+    cp /etc/brilltunnel/limit/vless/ip/* backup/vless/ip/ &>/dev/null
+    cp /etc/brilltunnel/limit/trojan/ip/* backup/trojan/ip/ &>/dev/null
+    cp /etc/brilltunnel/limit/ssh/ip/* backup/ssh/ip/ &>/dev/null
     cp /etc/user/ssh/*.txt backup/ssh/ &>/dev/null
     cp -r /etc/user backup/user &>/dev/null
     cd /root &>/dev/null
@@ -141,7 +141,7 @@ restoreBot() {
 	cp gshadow /etc/ &>/dev/null
 	echo -e "[ ${green}INFO${NC} ] • Restoring gshadow data..."
 	sleep 1
-    cp -r hokage /var/lib/ &>/dev/null
+    cp -r brilltunnel /var/lib/ &>/dev/null
     cp -r xray /etc/ &>/dev/null
     cp -r html /var/www/ &>/dev/null
     cp -r user /etc/ &>/dev/null
@@ -150,10 +150,10 @@ restoreBot() {
     cp /vmess/quota/* /etc/vmess/ &>/dev/null
     cp /vless/quota/* /etc/vless/ &>/dev/null
     cp /trojan/quota/* /etc/trojan/ &>/dev/null
-    cp /vmess/ip/* /etc/hokage/limit/vmess/ip/ &>/dev/null
-    cp /vless/ip/* /etc/hokage/limit/vless/ip/ &>/dev/null
-    cp /trojan/ip/* /etc/hokage/limit/trojan/ip/ &>/dev/null
-    cp /ssh/ip/* /etc/hokage/limit/ssh/ip/ &>/dev/null
+    cp /vmess/ip/* /etc/brilltunnel/limit/vmess/ip/ &>/dev/null
+    cp /vless/ip/* /etc/brilltunnel/limit/vless/ip/ &>/dev/null
+    cp /trojan/ip/* /etc/brilltunnel/limit/trojan/ip/ &>/dev/null
+    cp /ssh/ip/* /etc/brilltunnel/limit/ssh/ip/ &>/dev/null
     rm -rf /root/backup
     rm -f backup.zip
     echo -e "[ ${green}INFO${NC} ] • Done Restore... "

@@ -46,7 +46,7 @@ NUMBER_OF_CLIENTS=$(grep -c -E "^### " "/etc/xray/config.json")
     sed -i "/^### $user $exp/,/^},{/d" /etc/xray/config.json
     sed -i "/^### $user $exp/,/^},{/d" /etc/vmess/.vmess.db
     rm -rf /etc/vmess/$user
-    rm -rf /etc/hokage/limit/vmess/ip/$user
+    rm -rf /etc/brilltunnel/limit/vmess/ip/$user
     systemctl restart xray > /dev/null 2>&1
     clear
     echo -e "\033[0;33m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"

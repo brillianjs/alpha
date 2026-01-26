@@ -52,7 +52,7 @@ NUMBER_OF_CLIENTS=$(grep -c -E "^#! " "/etc/xray/config.json")
     sed -i "/^#! $user $exp/,/^},{/d" /etc/xray/config.json
     sed -i "/### $user $exp/,/^},{/d" /etc/trojan/.trojan.db
     rm -rf /etc/trojan/$user
-    rm -rf /etc/hokage/limit/trojan/ip/$user
+    rm -rf /etc/brilltunnel/limit/trojan/ip/$user
     systemctl restart xray > /dev/null 2>&1
     clear
     echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\033[0m"

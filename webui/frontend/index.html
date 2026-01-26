@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BrillTunnel - VPN Management</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    [x-cloak] { display: none !important; }
+    .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+    .card-hover:hover { transform: translateY(-2px); box-shadow: 0 10px 40px rgba(0,0,0,0.1); }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen" x-data="app()" x-init="init()">
+
+  <!-- Login Page -->
+  <div x-show="!isLoggedIn" x-cloak class="min-h-screen flex items-center justify-center gradient-bg">
+    <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md">
+      <div class="text-center mb-8">
+        <div class="w-20 h-20 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-full mx-auto flex items-center justify-center mb-4">
+          <i class="fas fa-shield-alt text-3xl text-white"></i>
+        </div>
+        <h1 class="text-2xl font-bold text-gray-800">BrillTunnel</h1>
+        <p class="text-gray-500">VPN Management Panel</p>
+      </div>
+
+      <form @submit.prevent="login()">
+        <div class="mb-4">
+          <label class="block text-gray-700 text-sm font-medium mb-2">Username</label>
+          <input type="text" x-model="loginForm.username"
+                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                 placeholder="Enter username" required>
+        </div>
+        <div class="mb-6">
+          <label class="block text-gray-700 text-sm font-medium mb-2">Password</label>
+          <input type="password" x-model="loginForm.password"
+                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                 placeholder="Enter password" required>
+        </div>
+        <button type="submit"
+                class="w-full bg-gradient-to-r from-purple-500 to-indigo-600 text-white py-3 rounded-lg font-medium hover:opacity-90 transition">
+          <i class="fas fa-sign-in-alt mr-2"></i> Login
+        </button>
+      </form>
+
+      <p x-show="loginError" class="mt-4 text-red-500 text-center text-sm" x-text="loginError"></p>
+    </div>
+  </div>
+
+  <!-- Main Dashboard -->
+  <div x-show="isLoggedIn" x-cloak class="flex min-h-screen">
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-gray-900 text-white fixed h-full">
+      <div class="p-6 border-b border-gray-700">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-lg flex items-center justify-center">
+            <i class="fas fa-shield-alt"></i>
+          </div>
+          <div>
+            <h1 class="font-bold">BrillTunnel</h1>
+            <p class="text-xs text-gray-400">VPN Panel</p>
+          </div>
+        </div>
+      </div>
+
+      <nav class="p-4">
+        <ul class="space-y-2">
+          <li>
+            <a href="#" @click.prevent="currentPage = 'dashboard'"
+               :class="currentPage === 'dashboard' ? 'bg-purple-600' : 'hover:bg-gray-800'"
+               class="flex items-center space-x-3 px-4 py-3 rounded-lg transition">
+              <i class="fas fa-home"></i>
+              <span>Dashboard</span>
+            </a>
+          </li>
+          <li>
+            <a href="#" @click.prevent="currentPage = 'vmess'; loadUsers('vmess')"
+               :class="currentPage === 'vmess' ? 'bg-purple-600' : 'hover:bg-gray-800'"
+               class="flex items-center space-x-3 px-4 py-3 rounded-lg transition">
+              <i class="fas fa-bolt"></i>
+              <span>VMess</span>
+            </a>
+          </li>
+          <li>
+            <a href="#" @click.prevent="currentPage = 'vless'; loadUsers('vless')"
+               :class="currentPage === 'vless' ? 'bg-purple-600' : 'hover:bg-gray-800'"
+               class="flex items-center space-x-3 px-4 py-3 rounded-lg transition">
+              <i class="fas fa-rocket"></i>
+              <span>VLess</span>
+            </a>
+          </li>
+          <li>
+            <a href="#" @click.prevent="currentPage = 'trojan'; loadUsers('trojan')"
+               :class="currentPage === 'trojan' ? 'bg-purple-600' : 'hover:bg-gray-800'"
+               class="flex items-center space-x-3 px-4 py-3 rounded-lg transition">
+              <i class="fas fa-horse"></i>
+              <span>Trojan</span>
+            </a>
+          </li>
+          <li>
+            <a href="#" @click.prevent="currentPage = 'shadowsocks'; loadUsers('shadowsocks')"
+               :class="currentPage === 'shadowsocks' ? 'bg-purple-600' : 'hover:bg-gray-800'"
+               class="flex items-center space-x-3 px-4 py-3 rounded-lg transition">
+              <i class="fas fa-moon"></i>
+              <span>Shadowsocks</span>
+            </a>
+          </li>
+          <li>
+            <a href="#" @click.prevent="currentPage = 'system'"
+               :class="currentPage === 'system' ? 'bg-purple-600' : 'hover:bg-gray-800'"
+               class="flex items-center space-x-3 px-4 py-3 rounded-lg transition">
+              <i class="fas fa-cog"></i>
+              <span>System</span>
+            </a>
+          </li>
+        </ul>
+      </nav>
+
+      <div class="absolute bottom-0 w-full p-4 border-t border-gray-700">
+        <button @click="logout()" class="flex items-center space-x-3 px-4 py-3 w-full hover:bg-gray-800 rounded-lg transition">
+          <i class="fas fa-sign-out-alt"></i>
+          <span>Logout</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="ml-64 flex-1 p-8">
+
+      <!-- Dashboard Page -->
+      <div x-show="currentPage === 'dashboard'">
+        <h2 class="text-2xl font-bold text-gray-800 mb-6">Dashboard</h2>
+
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div class="bg-white rounded-xl p-6 shadow-sm card-hover transition">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-gray-500 text-sm">VMess Users</p>
+                <p class="text-3xl font-bold text-gray-800" x-text="stats.users?.vmess || 0"></p>
+              </div>
+              <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                <i class="fas fa-bolt text-blue-600"></i>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-xl p-6 shadow-sm card-hover transition">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-gray-500 text-sm">VLess Users</p>
+                <p class="text-3xl font-bold text-gray-800" x-text="stats.users?.vless || 0"></p>
+              </div>
+              <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                <i class="fas fa-rocket text-green-600"></i>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-xl p-6 shadow-sm card-hover transition">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-gray-500 text-sm">Trojan Users</p>
+                <p class="text-3xl font-bold text-gray-800" x-text="stats.users?.trojan || 0"></p>
+              </div>
+              <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                <i class="fas fa-horse text-purple-600"></i>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-xl p-6 shadow-sm card-hover transition">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-gray-500 text-sm">Total Users</p>
+                <p class="text-3xl font-bold text-gray-800" x-text="stats.users?.total || 0"></p>
+              </div>
+              <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                <i class="fas fa-users text-orange-600"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Services Status -->
+        <div class="bg-white rounded-xl p-6 shadow-sm">
+          <h3 class="text-lg font-semibold text-gray-800 mb-4">Services Status</h3>
+          <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <template x-for="(status, service) in stats.services" :key="service">
+              <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <span class="font-medium capitalize" x-text="service"></span>
+                <span :class="status === 'running' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'"
+                      class="px-3 py-1 rounded-full text-sm font-medium"
+                      x-text="status === 'running' ? 'ON' : 'OFF'"></span>
+              </div>
+            </template>
+          </div>
+        </div>
+      </div>
+
+      <!-- Users Pages (VMess, VLess, Trojan, Shadowsocks) -->
+      <div x-show="['vmess', 'vless', 'trojan', 'shadowsocks'].includes(currentPage)">
+        <div class="flex justify-between items-center mb-6">
+          <h2 class="text-2xl font-bold text-gray-800 capitalize" x-text="currentPage + ' Users'"></h2>
+          <button @click="showCreateModal = true"
+                  class="bg-gradient-to-r from-purple-500 to-indigo-600 text-white px-6 py-2 rounded-lg hover:opacity-90 transition">
+            <i class="fas fa-plus mr-2"></i> Add User
+          </button>
+        </div>
+
+        <!-- Users Table -->
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+          <table class="w-full">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase">Username</th>
+                <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase">UUID/Password</th>
+                <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase">Expiry</th>
+                <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase">Quota</th>
+                <th class="px-6 py-4 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+              <template x-for="user in users" :key="user.username">
+                <tr class="hover:bg-gray-50">
+                  <td class="px-6 py-4 font-medium text-gray-800" x-text="user.username"></td>
+                  <td class="px-6 py-4 text-gray-600 text-sm font-mono" x-text="user.uuid?.substring(0, 16) + '...'"></td>
+                  <td class="px-6 py-4">
+                    <span :class="new Date(user.expiry) > new Date() ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'"
+                          class="px-3 py-1 rounded-full text-sm" x-text="user.expiry"></span>
+                  </td>
+                  <td class="px-6 py-4 text-gray-600" x-text="user.quota + ' GB'"></td>
+                  <td class="px-6 py-4">
+                    <button @click="copyLink(user)" class="text-blue-600 hover:text-blue-800 mr-3" title="Copy Link">
+                      <i class="fas fa-copy"></i>
+                    </button>
+                    <button @click="deleteUser(user.username)" class="text-red-600 hover:text-red-800" title="Delete">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </td>
+                </tr>
+              </template>
+              <tr x-show="users.length === 0">
+                <td colspan="5" class="px-6 py-8 text-center text-gray-500">No users found</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- System Page -->
+      <div x-show="currentPage === 'system'">
+        <h2 class="text-2xl font-bold text-gray-800 mb-6">System Management</h2>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Restart Services -->
+          <div class="bg-white rounded-xl p-6 shadow-sm">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Restart Services</h3>
+            <div class="space-y-3">
+              <template x-for="service in ['xray', 'nginx', 'haproxy', 'ssh', 'dropbear']" :key="service">
+                <button @click="restartService(service)"
+                        class="w-full flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition">
+                  <span class="font-medium capitalize" x-text="service"></span>
+                  <i class="fas fa-sync-alt text-gray-500"></i>
+                </button>
+              </template>
+            </div>
+          </div>
+
+          <!-- System Info -->
+          <div class="bg-white rounded-xl p-6 shadow-sm">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">System Information</h3>
+            <div class="space-y-4">
+              <div class="flex justify-between p-4 bg-gray-50 rounded-lg">
+                <span class="text-gray-600">Domain</span>
+                <span class="font-medium" x-text="stats.domain || '-'"></span>
+              </div>
+              <div class="flex justify-between p-4 bg-gray-50 rounded-lg">
+                <span class="text-gray-600">API Status</span>
+                <span class="bg-green-100 text-green-600 px-3 py-1 rounded-full text-sm">Connected</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Create User Modal -->
+  <div x-show="showCreateModal" x-cloak
+       class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-2xl p-8 w-full max-w-md" @click.away="showCreateModal = false">
+      <h3 class="text-xl font-bold text-gray-800 mb-6">Create New User</h3>
+
+      <form @submit.prevent="createUser()">
+        <div class="mb-4">
+          <label class="block text-gray-700 text-sm font-medium mb-2">Username</label>
+          <input type="text" x-model="createForm.username"
+                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                 placeholder="Enter username" required>
+        </div>
+        <div class="mb-4">
+          <label class="block text-gray-700 text-sm font-medium mb-2">Duration (days)</label>
+          <input type="number" x-model="createForm.days"
+                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                 placeholder="30" required>
+        </div>
+        <div class="mb-4">
+          <label class="block text-gray-700 text-sm font-medium mb-2">Quota (GB)</label>
+          <input type="number" x-model="createForm.quota"
+                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                 placeholder="0 = Unlimited">
+        </div>
+        <div class="mb-6">
+          <label class="block text-gray-700 text-sm font-medium mb-2">IP Limit</label>
+          <input type="number" x-model="createForm.ipLimit"
+                 class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                 placeholder="0 = Unlimited">
+        </div>
+
+        <div class="flex space-x-4">
+          <button type="button" @click="showCreateModal = false"
+                  class="flex-1 px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+            Cancel
+          </button>
+          <button type="submit"
+                  class="flex-1 bg-gradient-to-r from-purple-500 to-indigo-600 text-white px-6 py-3 rounded-lg hover:opacity-90 transition">
+            Create
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div x-show="toast.show" x-cloak
+       x-transition:enter="transition ease-out duration-300"
+       x-transition:enter-start="opacity-0 transform translate-y-2"
+       x-transition:enter-end="opacity-100 transform translate-y-0"
+       x-transition:leave="transition ease-in duration-200"
+       x-transition:leave-start="opacity-100"
+       x-transition:leave-end="opacity-0"
+       :class="toast.type === 'success' ? 'bg-green-500' : 'bg-red-500'"
+       class="fixed bottom-6 right-6 text-white px-6 py-3 rounded-lg shadow-lg z-50">
+    <span x-text="toast.message"></span>
+  </div>
+
+  <script>
+    function app() {
+      return {
+        // API Base URL - Change this to your server
+        apiUrl: 'http://localhost:3001/api',
+
+        // Auth State
+        isLoggedIn: false,
+        token: null,
+        loginForm: { username: '', password: '' },
+        loginError: '',
+
+        // App State
+        currentPage: 'dashboard',
+        stats: {},
+        users: [],
+        domain: '',
+
+        // Modals
+        showCreateModal: false,
+        createForm: { username: '', days: 30, quota: 0, ipLimit: 0 },
+
+        // Toast
+        toast: { show: false, message: '', type: 'success' },
+
+        init() {
+          // Check for saved token
+          const savedToken = localStorage.getItem('brilltunnel_token');
+          if (savedToken) {
+            this.token = savedToken;
+            this.verifyToken();
+          }
+        },
+
+        async verifyToken() {
+          try {
+            const res = await fetch(`${this.apiUrl}/auth/verify`, {
+              headers: { 'Authorization': `Bearer ${this.token}` }
+            });
+            if (res.ok) {
+              this.isLoggedIn = true;
+              this.loadDashboard();
+            } else {
+              this.logout();
+            }
+          } catch (e) {
+            console.error('Token verification failed:', e);
+          }
+        },
+
+        async login() {
+          try {
+            const res = await fetch(`${this.apiUrl}/auth/login`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(this.loginForm)
+            });
+            const data = await res.json();
+
+            if (res.ok) {
+              this.token = data.token;
+              localStorage.setItem('brilltunnel_token', data.token);
+              this.isLoggedIn = true;
+              this.loginError = '';
+              this.loadDashboard();
+            } else {
+              this.loginError = data.error || 'Login failed';
+            }
+          } catch (e) {
+            this.loginError = 'Connection failed. Check API server.';
+          }
+        },
+
+        logout() {
+          this.token = null;
+          this.isLoggedIn = false;
+          localStorage.removeItem('brilltunnel_token');
+        },
+
+        async loadDashboard() {
+          try {
+            const res = await fetch(`${this.apiUrl}/dashboard/stats`, {
+              headers: { 'Authorization': `Bearer ${this.token}` }
+            });
+            this.stats = await res.json();
+          } catch (e) {
+            console.error('Failed to load dashboard:', e);
+          }
+        },
+
+        async loadUsers(type) {
+          try {
+            const res = await fetch(`${this.apiUrl}/${type}/users`, {
+              headers: { 'Authorization': `Bearer ${this.token}` }
+            });
+            const data = await res.json();
+            this.users = data.users || [];
+            this.domain = data.domain;
+          } catch (e) {
+            console.error('Failed to load users:', e);
+          }
+        },
+
+        async createUser() {
+          try {
+            const res = await fetch(`${this.apiUrl}/${this.currentPage}/users`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${this.token}`
+              },
+              body: JSON.stringify(this.createForm)
+            });
+            const data = await res.json();
+
+            if (res.ok) {
+              this.showToast('User created successfully!', 'success');
+              this.showCreateModal = false;
+              this.createForm = { username: '', days: 30, quota: 0, ipLimit: 0 };
+              this.loadUsers(this.currentPage);
+              this.loadDashboard();
+            } else {
+              this.showToast(data.error || 'Failed to create user', 'error');
+            }
+          } catch (e) {
+            this.showToast('Connection failed', 'error');
+          }
+        },
+
+        async deleteUser(username) {
+          if (!confirm(`Are you sure you want to delete user "${username}"?`)) return;
+
+          try {
+            const res = await fetch(`${this.apiUrl}/${this.currentPage}/users/${username}`, {
+              method: 'DELETE',
+              headers: { 'Authorization': `Bearer ${this.token}` }
+            });
+
+            if (res.ok) {
+              this.showToast('User deleted successfully!', 'success');
+              this.loadUsers(this.currentPage);
+              this.loadDashboard();
+            } else {
+              this.showToast('Failed to delete user', 'error');
+            }
+          } catch (e) {
+            this.showToast('Connection failed', 'error');
+          }
+        },
+
+        copyLink(user) {
+          // Generate link based on protocol type
+          let link = '';
+          const domain = this.domain || 'localhost';
+
+          if (this.currentPage === 'vmess') {
+            const config = {
+              v: "2", ps: user.username, add: domain, port: "443",
+              id: user.uuid, aid: "0", net: "ws", path: "/vmess",
+              type: "none", host: domain, tls: "tls"
+            };
+            link = `vmess://${btoa(JSON.stringify(config))}`;
+          } else if (this.currentPage === 'vless') {
+            link = `vless://${user.uuid}@${domain}:443?path=/vless&security=tls&encryption=none&type=ws#${user.username}`;
+          } else if (this.currentPage === 'trojan') {
+            link = `trojan://${user.uuid}@${domain}:443?path=%2Ftrojan-ws&security=tls&type=ws#${user.username}`;
+          } else if (this.currentPage === 'shadowsocks') {
+            link = `ss://${btoa('aes-128-gcm:' + user.uuid)}@${domain}:443?path=/ss-ws&type=ws#${user.username}`;
+          }
+
+          navigator.clipboard.writeText(link);
+          this.showToast('Link copied to clipboard!', 'success');
+        },
+
+        async restartService(service) {
+          try {
+            const res = await fetch(`${this.apiUrl}/system/restart/${service}`, {
+              method: 'POST',
+              headers: { 'Authorization': `Bearer ${this.token}` }
+            });
+
+            if (res.ok) {
+              this.showToast(`Service ${service} restarted!`, 'success');
+              this.loadDashboard();
+            } else {
+              this.showToast(`Failed to restart ${service}`, 'error');
+            }
+          } catch (e) {
+            this.showToast('Connection failed', 'error');
+          }
+        },
+
+        showToast(message, type = 'success') {
+          this.toast = { show: true, message, type };
+          setTimeout(() => { this.toast.show = false; }, 3000);
+        }
+      };
+    }
+  </script>
+</body>
+</html>

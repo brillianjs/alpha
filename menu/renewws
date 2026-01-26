@@ -36,13 +36,13 @@ NUMBER_OF_CLIENTS=$(grep -c -E "^### " "/etc/xray/config.json")
     menu
     else
     read -p "Expired (days): " masaaktif
-    rm -f /etc/hokage/limit/vmess/ip/${user}
+    rm -f /etc/brilltunnel/limit/vmess/ip/${user}
     rm -f /etc/vmess/$user
     read -p "Limit User (GB): " Quota
     read -p "Limit User (IP): " iplim
     exp=$(grep -wE "^### $user" "/etc/xray/config.json" | cut -d ' ' -f 3 | sort | uniq)
-    mkdir -p /etc/hokage/limit/vmess/ip
-echo ${iplim} >> /etc/hokage/limit/vmess/ip/${user}
+    mkdir -p /etc/brilltunnel/limit/vmess/ip
+echo ${iplim} >> /etc/brilltunnel/limit/vmess/ip/${user}
 if [ ! -e /etc/vmess/ ]; then
   mkdir -p /etc/vmess/
 fi

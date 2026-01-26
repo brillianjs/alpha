@@ -8,54 +8,28 @@ bc="\033[5;36m"
 y="\033[0;33m"
 NC="\033[0m"
 
-# // Izin IP
-url_izin="https://raw.githubusercontent.com/brillianjs/ijin/main/alpha"
-ipsaya=$(curl -sS ipv4.icanhazip.com)
-data_server=$(curl -v --insecure --silent https://google.com/ 2>&1 | grep Date | sed -e 's/< Date: //')
-date_list=$(date +"%Y-%m-%d" -d "$data_server")
-checking_sc() {
-  useexp=$(wget -qO- $url_izin | grep $ipsaya | awk '{print $3}')
-  if [[ $date_list < $useexp ]]; then
-    echo -ne
-  else
-    echo -e "\033[1;93m────────────────────────────────────────────\033[0m"
-    echo -e "\033[42m          404 NOT FOUND AUTOSCRIPT          \033[0m"
-    echo -e "\033[1;93m────────────────────────────────────────────\033[0m"
-    echo -e ""
-    echo -e "            ${RED}PERMISSION DENIED !${NC}"
-    echo -e "   \033[0;33mYour VPS${NC} $ipsaya \033[0;33mHas been Banned${NC}"
-    echo -e "     \033[0;33mBuy access permissions for scripts${NC}"
-    echo -e "             \033[0;33mContact Admin :${NC}"
-    echo -e "      \033[0;36mTelegram${NC} HokageLegend"
-    echo -e "\033[1;93m────────────────────────────────────────────\033[0m"
-    exit
-  fi
-}
-checking_sc
+# // License check removed - personal use only
 
 function garis() {
 echo -e "${y} ────────────────────────────────────────────${NC}"
-}
 
 function Credit_Sc() {
 sleep 1
 echo -e ""
 garis 
 echo -e "${ungu}      Terimakasih sudah menggunakan-"
-echo -e "        Script premium by HokageLegend"
+echo -e "        Script premium by BrillTunnel"
 garis
 echo -e ""
 exit 0
-}
 
 function LOGO() {
 clear
 echo -e ""
 garis
-echo -e "${ungu}            HokageLegend TUNNELING            "
+echo -e "${ungu}            BrillTunnel TUNNELING            "
 garis
 echo -e ""
-}
 
 clear
 garis

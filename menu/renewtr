@@ -36,14 +36,14 @@ NUMBER_OF_CLIENTS=$(grep -c -E "^#! " "/etc/xray/config.json")
     if [ -z $user ]; then
     menu
     else
-    rm -f /etc/hokage/limit/trojan/ip/${user}
+    rm -f /etc/brilltunnel/limit/trojan/ip/${user}
     rm -f /etc/trojan/$user
     read -p "Expired (days): " masaaktif
     read -p "Limit User (GB): " Quota
     read -p "Limit User (IP): " iplim
     exp=$(grep -wE "^#! $user" "/etc/xray/config.json" | cut -d ' ' -f 3 | sort | uniq)
-    mkdir -p /etc/hokage/limit/trojan/ip
-echo ${iplim} >> /etc/hokage/limit/trojan/ip/${user}
+    mkdir -p /etc/brilltunnel/limit/trojan/ip
+echo ${iplim} >> /etc/brilltunnel/limit/trojan/ip/${user}
 if [ ! -e /etc/trojan ]; then
   mkdir -p /etc/trojan
 fi

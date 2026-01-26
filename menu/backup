@@ -1,5 +1,5 @@
 #!/bin/bash
-# My Telegram : https://t.me/hokagevpnpremium
+# My Telegram : https://t.me/brilltunnelvpnpremium
 # ==========================================
 # Color
 RED='\033[0;31m'
@@ -38,7 +38,7 @@ cp /etc/group backup/
 cp /etc/shadow backup/
 cp /etc/gshadow backup/
 cp /etc/crontab backup/
-cp -r /var/lib/hokage/ backup/hokage 
+cp -r /var/lib/brilltunnel/ backup/brilltunnel 
 cp -r /etc/xray backup/xray
 cp -r /var/www/html/ backup/html
 cd /root
@@ -74,7 +74,7 @@ TEXT="
 <b>Link Backup   :</b> $link
 <code>◇━━━━━━━━━━━━━━◇</code>
 <code>Silahkan copy Link dan restore di VPS baru</code>
-<code>BY BOT : @HOKAGEVPN</code>
+<code>BY BOT : @BRILLTUNNELVPN</code>
 "
 curl -s --max-time $TIME -d "chat_id=$CHATID&disable_web_page_preview=1&text=$TEXT&parse_mode=html" $URL >/dev/null
 echo ""
