@@ -13,6 +13,54 @@ NC='\e[0m'
 red='\e[1;31m'
 green='\e[0;32m'
 purple="\e[0;33m"
+
+# ===================
+# OS Detection Function
+# ===================
+detect_os() {
+    if [ -f /etc/os-release ]; then
+        . /etc/os-release
+        OS_ID="$ID"
+        OS_VERSION="$VERSION_ID"
+        OS_NAME="$PRETTY_NAME"
+        OS_CODENAME="$VERSION_CODENAME"
+    else
+        echo -e "${ERROR} Cannot detect OS version"
+        exit 1
+    fi
+
+    # Export for global use
+    export OS_ID OS_VERSION OS_NAME OS_CODENAME
+
+    # Validate supported OS
+    case "$OS_ID" in
+        ubuntu)
+            case "$OS_VERSION" in
+                20.04|22.04|24.04)
+                    echo -e "${OK} Supported Ubuntu version: $OS_VERSION ($OS_CODENAME)"
+                    ;;
+                *)
+                    echo -e "${YELLOW}Warning: Ubuntu $OS_VERSION not officially tested${FONT}"
+                    ;;
+            esac
+            ;;
+        debian)
+            case "$OS_VERSION" in
+                10|11|12)
+                    echo -e "${OK} Supported Debian version: $OS_VERSION ($OS_CODENAME)"
+                    ;;
+                *)
+                    echo -e "${YELLOW}Warning: Debian $OS_VERSION not officially tested${FONT}"
+                    ;;
+            esac
+            ;;
+        *)
+            echo -e "${ERROR} Unsupported OS: $OS_ID"
+            exit 1
+            ;;
+    esac
+}
+
 # ===================
 clear
   # // Exporint IP AddressInformation
@@ -24,19 +72,16 @@ clear && clear && clear
 clear;clear;clear
 
 clear
-# Valid Script
-ipsaya=$(curl -sS ipv4.icanhazip.com)
-data_server=$(curl -v --insecure --silent https://google.com/ 2>&1 | grep Date | sed -e 's/< Date: //')
-date_list=$(date +"%Y-%m-%d" -d "$data_server")
 
   # // Banner
-echo -e "${YELLOW}----------------------------------------------------------${NC}"
-echo -e " WELCOME TO HOKAGE LEGEND VPN ${YELLOW}(${NC}${green}Stable Edition${NC}${YELLOW})${NC}"
-echo -e " PROSES PENGECEKAN IP ADDRESS ANDA !!"
-echo -e "${purple}----------------------------------------------------------${NC}"
-echo -e " ›AUTHOR : ${green}HOKAGE LEGEND® ${NC}${YELLOW}(${NC}${green}V 3.2${NC}${YELLOW})${NC}"
-echo -e " ›TEAM 🅥🅝: HOKAGE LEGEND ${YELLOW}(${NC} 2023 ${YELLOW})${NC}"
-echo -e "${YELLOW}----------------------------------------------------------${NC}"
+echo -e "${BLUE}╔═══════════════════════════════════════════════════════════════╗${NC}"
+echo -e "${BLUE}║${NC}                                                               ${BLUE}║${NC}"
+echo -e "${BLUE}║${NC}        🚀 ${green}BRILLTUNNEL VPN${NC} - Premium Tunneling Solution        ${BLUE}║${NC}"
+echo -e "${BLUE}║${NC}                    ${YELLOW}Stable Edition v3.2${NC}                        ${BLUE}║${NC}"
+echo -e "${BLUE}║${NC}                                                               ${BLUE}║${NC}"
+echo -e "${BLUE}╠═══════════════════════════════════════════════════════════════╣${NC}"
+echo -e "${BLUE}║${NC}  Checking your VPS configuration...                          ${BLUE}║${NC}"
+echo -e "${BLUE}╚═══════════════════════════════════════════════════════════════╝${NC}"
 echo ""
 sleep 2
 # // Checking Os Architecture
@@ -80,11 +125,14 @@ fi
 red='\e[1;31m'
 green='\e[0;32m'
 NC='\e[0m'
-#IZIN SCRIPT
 MYIP=$(curl -sS ipv4.icanhazip.com)
 clear
+
+# Install Ruby and lolcat with compatibility for all Ubuntu versions
 apt install ruby -y
-gem install lolcat
+# Use --no-document to speed up installation and avoid issues on newer systems
+gem install lolcat --no-document 2>/dev/null || gem install lolcat
+
 apt install wondershaper -y
 clear
 # REPO    
@@ -164,25 +212,69 @@ function first_setup(){
     echo iptables-persistent iptables-persistent/autosave_v4 boolean true | debconf-set-selections
     echo iptables-persistent iptables-persistent/autosave_v6 boolean true | debconf-set-selections
     print_success "Directory Xray"
-    if [[ $(cat /etc/os-release | grep -w ID | head -n1 | sed 's/=//g' | sed 's/"//g' | sed 's/ID//g') == "ubuntu" ]]; then
-    echo "Setup Dependencies $(cat /etc/os-release | grep -w PRETTY_NAME | head -n1 | sed 's/=//g' | sed 's/"//g' | sed 's/PRETTY_NAME//g')"
+
+    # Detect OS if not already done
+    [[ -z "$OS_ID" ]] && detect_os
+
+    echo "Setup Dependencies for $OS_NAME"
     sudo apt update -y
-    apt-get install --no-install-recommends software-properties-common
-    add-apt-repository ppa:vbernat/haproxy-2.0 -y
-    apt-get -y install haproxy=2.0.\*
-elif [[ $(cat /etc/os-release | grep -w ID | head -n1 | sed 's/=//g' | sed 's/"//g' | sed 's/ID//g') == "debian" ]]; then
-    echo "Setup Dependencies For OS Is $(cat /etc/os-release | grep -w PRETTY_NAME | head -n1 | sed 's/=//g' | sed 's/"//g' | sed 's/PRETTY_NAME//g')"
-    curl https://haproxy.debian.net/bernat.debian.org.gpg |
-        gpg --dearmor >/usr/share/keyrings/haproxy.debian.net.gpg
-    echo deb "[signed-by=/usr/share/keyrings/haproxy.debian.net.gpg]" \
-        http://haproxy.debian.net buster-backports-1.8 main \
-        >/etc/apt/sources.list.d/haproxy.list
-    sudo apt-get update
-    apt-get -y install haproxy=1.8.\*
-else
-    echo -e " Your OS Is Not Supported ($(cat /etc/os-release | grep -w PRETTY_NAME | head -n1 | sed 's/=//g' | sed 's/"//g' | sed 's/PRETTY_NAME//g') )"
-    exit 1
-fi
+    apt-get install -y --no-install-recommends software-properties-common gnupg2 ca-certificates
+
+    if [[ "$OS_ID" == "ubuntu" ]]; then
+        case "$OS_VERSION" in
+            20.04)
+                # Ubuntu 20.04 - use PPA
+                add-apt-repository ppa:vbernat/haproxy-2.4 -y
+                apt-get update
+                apt-get -y install haproxy
+                ;;
+            22.04)
+                # Ubuntu 22.04 - use PPA or default repo
+                add-apt-repository ppa:vbernat/haproxy-2.6 -y
+                apt-get update
+                apt-get -y install haproxy
+                ;;
+            24.04)
+                # Ubuntu 24.04 - use default repo (has HAProxy 2.8+)
+                apt-get update
+                apt-get -y install haproxy
+                ;;
+            *)
+                # Fallback for other Ubuntu versions
+                apt-get update
+                apt-get -y install haproxy
+                ;;
+        esac
+    elif [[ "$OS_ID" == "debian" ]]; then
+        case "$OS_VERSION" in
+            10)
+                # Debian 10 Buster
+                curl -fsSL https://haproxy.debian.net/bernat.debian.org.gpg | gpg --dearmor -o /usr/share/keyrings/haproxy.debian.net.gpg
+                echo "deb [signed-by=/usr/share/keyrings/haproxy.debian.net.gpg] http://haproxy.debian.net buster-backports-2.4 main" > /etc/apt/sources.list.d/haproxy.list
+                apt-get update
+                apt-get -y install haproxy
+                ;;
+            11)
+                # Debian 11 Bullseye
+                curl -fsSL https://haproxy.debian.net/bernat.debian.org.gpg | gpg --dearmor -o /usr/share/keyrings/haproxy.debian.net.gpg
+                echo "deb [signed-by=/usr/share/keyrings/haproxy.debian.net.gpg] http://haproxy.debian.net bullseye-backports-2.6 main" > /etc/apt/sources.list.d/haproxy.list
+                apt-get update
+                apt-get -y install haproxy
+                ;;
+            12)
+                # Debian 12 Bookworm - use default repo
+                apt-get update
+                apt-get -y install haproxy
+                ;;
+            *)
+                apt-get update
+                apt-get -y install haproxy
+                ;;
+        esac
+    else
+        echo -e "${ERROR} Your OS Is Not Supported ($OS_NAME)"
+        exit 1
+    fi
 }
 
 # GEO PROJECT
@@ -207,7 +299,18 @@ function base_package() {
     clear
     ########
     print_install "Menginstall Packet Yang Dibutuhkan"
-    apt install zip pwgen openssl netcat socat cron bash-completion -y
+
+    # Detect OS if not already done
+    [[ -z "$OS_ID" ]] && detect_os
+
+    # Fix netcat package name for Ubuntu 22.04+ and Debian 11+
+    if [[ "$OS_ID" == "ubuntu" && "${OS_VERSION%%.*}" -ge 22 ]] || [[ "$OS_ID" == "debian" && "${OS_VERSION%%.*}" -ge 11 ]]; then
+        NETCAT_PKG="netcat-openbsd"
+    else
+        NETCAT_PKG="netcat"
+    fi
+
+    apt install zip pwgen openssl $NETCAT_PKG socat cron bash-completion -y
     apt install figlet -y
     apt update -y
     apt upgrade -y
@@ -221,8 +324,9 @@ function base_package() {
     apt install ntpdate -y
     ntpdate pool.ntp.org
     apt install sudo -y
-    apt install ruby -y 
-    gem install lolcat
+    apt install ruby -y
+    # Use --no-document to speed up installation and avoid issues on newer systems
+    gem install lolcat --no-document 2>/dev/null || gem install lolcat
     sudo apt-get clean all
     sudo apt-get autoremove -y
     sudo apt-get install -y debconf-utils
@@ -231,7 +335,7 @@ function base_package() {
     sudo apt-get install -y --no-install-recommends software-properties-common
     echo iptables-persistent iptables-persistent/autosave_v4 boolean true | debconf-set-selections
     echo iptables-persistent iptables-persistent/autosave_v6 boolean true | debconf-set-selections
-    sudo apt-get install -y speedtest-cli vnstat libnss3-dev libnspr4-dev pkg-config libpam0g-dev libcap-ng-dev libcap-ng-utils libselinux1-dev libcurl4-nss-dev flex bison make libnss3-tools libevent-dev bc rsyslog dos2unix zlib1g-dev libssl-dev libsqlite3-dev sed dirmngr libxml-parser-perl build-essential gcc g++ python htop lsof tar wget curl ruby zip unzip p7zip-full python3-pip libc6 util-linux build-essential msmtp-mta ca-certificates bsd-mailx iptables iptables-persistent netfilter-persistent net-tools openssl ca-certificates gnupg gnupg2 ca-certificates lsb-release gcc shc make cmake git screen socat xz-utils apt-transport-https gnupg1 dnsutils cron bash-completion ntpdate chrony jq openvpn easy-rsa
+    sudo apt-get install -y speedtest-cli vnstat libnss3-dev libnspr4-dev pkg-config libpam0g-dev libcap-ng-dev libcap-ng-utils libselinux1-dev libcurl4-nss-dev flex bison make libnss3-tools libevent-dev bc rsyslog dos2unix zlib1g-dev libssl-dev libsqlite3-dev sed dirmngr libxml-parser-perl build-essential gcc g++ python3 htop lsof tar wget curl ruby zip unzip p7zip-full python3-pip libc6 util-linux build-essential msmtp-mta ca-certificates bsd-mailx iptables iptables-persistent netfilter-persistent net-tools openssl ca-certificates gnupg gnupg2 ca-certificates lsb-release gcc shc make cmake git screen socat xz-utils apt-transport-https gnupg1 dnsutils cron bash-completion ntpdate chrony jq openvpn easy-rsa
     print_success "Packet Yang Dibutuhkan"
     
 }
@@ -241,47 +345,32 @@ function pasang_domain() {
 echo -e ""
 clear
     echo -e "   .----------------------------------."
-echo -e "   |\e[1;32mPlease Select a Domain Type Below \e[0m|"
+echo -e "   |\e[1;32m       Setup Domain VPN          \e[0m|"
 echo -e "   '----------------------------------'"
-echo -e "     \e[1;32m1)\e[0m Menggunakan Domain Sendiri"
-echo -e "     \e[1;32m2)\e[0m Menggunakan Domain Script"
-echo -e "   ------------------------------------"
-read -p "   Please select numbers 1-2 or Any Button(Random) : " host
+echo -e ""
+echo -e "   \e[1;32mPlease Enter Your Domain/Subdomain $NC"
+echo -e "   \e[1;33m(Pastikan domain sudah pointing ke IP VPS ini)$NC"
 echo ""
-if [[ $host == "1" ]]; then
-echo -e "   \e[1;32mPlease Enter Your Subdomain $NC"
-read -p "   Subdomain: " host1
-echo "IP=" >> /var/lib/kyt/ipvps.conf
-echo $host1 > /etc/xray/domain
-echo $host1 > /root/domain
-echo ""
-elif [[ $host == "2" ]]; then
-#install cf
-wget ${REPO}files/cf.sh && chmod +x cf.sh && ./cf.sh
-rm -f /root/cf.sh
-clear
+read -p "   Domain/Subdomain: " host1
+if [[ -z "$host1" ]]; then
+    echo -e "   \e[1;31mDomain tidak boleh kosong!$NC"
+    pasang_domain
 else
-print_install "Random Subdomain/Domain is Used"
-clear
-    fi
+    echo "IP=" >> /var/lib/kyt/ipvps.conf
+    echo $host1 > /etc/xray/domain
+    echo $host1 > /root/domain
+    echo ""
+    print_success "Domain $host1 berhasil disimpan"
+fi
 }
 
 clear
 #GANTI PASSWORD DEFAULT
 restart_system(){
-#IZIN SCRIPT
-curl "ipinfo.io/org?token=7a814b6263b02c" > /root/.isp 
-curl "ipinfo.io/city?token=7a814b6263b02c" > /root/.city
+curl -s ipinfo.io/org > /root/.isp
+curl -s ipinfo.io/city > /root/.city
 MYIP=$(curl -sS ipv4.icanhazip.com)
-echo -e "\e[32mloading...\e[0m" 
 clear
-izinsc="https://raw.githubusercontent.com/brillianjs/ijin/main/alpha"
-# USERNAME
-rm -f /usr/bin/user
-username=$(curl $izinsc | grep $MYIP | awk '{print $2}')
-echo "$username" >/usr/bin/user
-expx=$(curl $izinsc | grep $MYIP | awk '{print $3}')
-echo "$expx" >/usr/bin/e
 # DETAIL ORDER
 username=$(cat /usr/bin/user)
 oid=$(cat /usr/bin/ver)
@@ -304,37 +393,11 @@ mai="datediff "$Exp" "$DATE""
 Info="(${green}Active${NC})"
 Error="(${RED}ExpiRED${NC})"
 today=`date -d "0 days" +"%Y-%m-%d"`
-Exp1=$(curl $izinsc | grep $MYIP | awk '{print $4}')
 if [[ $today < $Exp1 ]]; then
 sts="${Info}"
 else
 sts="${Error}"
 fi
-TIMES="10"
-CHATID="1469244768"
-KEY="7534957646:AAGc_m_wAgCcwkUaCn0sPNFvRrnfBi_2Ez4"
-URL="https://api.telegram.org/bot$KEY/sendMessage"
-ISP=$(cat /root/.isp)
-CITY=$(cat /root/.city)
-TIMEZONE=$(printf '%(%H:%M:%S)T')
-    TEXT="
-<code>────────────────────</code>
-<b>⚡𝗡𝗢𝗧𝗜𝗙 𝗜𝗡𝗦𝗧𝗔𝗟𝗟 𝗦𝗖𝗥𝗜𝗣𝗧⚡</b>
-<code>────────────────────</code>
-<code>User     :</code><code>$username</code>
-<code>ISP      :</code><code>$ISP</code>
-<code>CITY     :</code><code>$CITY</code>
-<code>DATE     :</code><code>$DATE</code>
-<code>Time     :</code><code>$TIMEZONE</code>
-<code>Exp Sc.  :</code><code>$exp</code>
-<code>─────────────────────────────</code>
-<b> HOKAGE LEGEND VPN STORE SCRIPT  </b>
-<code>─────────────────────────────</code>
-<i>Automatic Notifications From Github</i>
-"'&reply_markup={"inline_keyboard":[[{"text":"ᴏʀᴅᴇʀ","url":"t.me/ohmyvillain"}]]}' 
-
-    curl -s --max-time $TIMES -d "chat_id=$CHATID&disable_web_page_preview=1&text=$TEXT&parse_mode=html" $URL >/dev/null
-}
 clear
 # Pasang SSL
 function pasang_ssl() {
@@ -607,26 +670,42 @@ rm -fr udp-custom.sh
 print_success "Udp-custom"
 }
 clear
+
 function ins_vnstat(){
 clear
 print_install "Menginstall Vnstat"
-# setting vnstat
-apt -y install vnstat > /dev/null 2>&1
-/etc/init.d/vnstat restart
-apt -y install libsqlite3-dev > /dev/null 2>&1
-wget https://humdi.net/vnstat/vnstat-2.6.tar.gz
-tar zxvf vnstat-2.6.tar.gz
-cd vnstat-2.6
-./configure --prefix=/usr --sysconfdir=/etc && make && make install
-cd
-vnstat -u -i $NET
-sed -i 's/Interface "'""eth0""'"/Interface "'""$NET""'"/g' /etc/vnstat.conf
-chown vnstat:vnstat /var/lib/vnstat -R
+
+# Detect OS if not already done
+[[ -z "$OS_ID" ]] && detect_os
+
+# Detect network interface
+NET=$(ip -4 route ls | grep default | grep -Po '(?<=dev )(\S+)' | head -1)
+[[ -z "$NET" ]] && NET="eth0"
+
+# Ubuntu 22.04+ and Debian 11+ have vnstat 2.x in repo
+if [[ "$OS_ID" == "ubuntu" && "${OS_VERSION%%.*}" -ge 22 ]] || [[ "$OS_ID" == "debian" && "${OS_VERSION%%.*}" -ge 11 ]]; then
+    apt -y install vnstat > /dev/null 2>&1
+    systemctl enable vnstat
+    systemctl restart vnstat
+else
+    # For older versions, compile from source
+    apt -y install vnstat > /dev/null 2>&1
+    /etc/init.d/vnstat restart
+    apt -y install libsqlite3-dev > /dev/null 2>&1
+    wget https://humdi.net/vnstat/vnstat-2.6.tar.gz
+    tar zxvf vnstat-2.6.tar.gz
+    cd vnstat-2.6
+    ./configure --prefix=/usr --sysconfdir=/etc && make && make install
+    cd
+    rm -f /root/vnstat-2.6.tar.gz
+    rm -rf /root/vnstat-2.6
+fi
+
+vnstat -u -i $NET 2>/dev/null || vnstat --add -i $NET 2>/dev/null
+sed -i "s/Interface \"eth0\"/Interface \"$NET\"/g" /etc/vnstat.conf 2>/dev/null
+chown vnstat:vnstat /var/lib/vnstat -R 2>/dev/null
 systemctl enable vnstat
-/etc/init.d/vnstat restart
-/etc/init.d/vnstat status
-rm -f /root/vnstat-2.6.tar.gz
-rm -rf /root/vnstat-2.6
+systemctl restart vnstat
 print_success "Vnstat"
 }
 
@@ -655,6 +734,7 @@ cd
 rm -rf wondershaper
 echo > /home/limit
 apt install msmtp-mta ca-certificates bsd-mailx -y
+# SMTP config removed - configure your own SMTP settings in /etc/msmtprc
 cat<<EOF>>/etc/msmtprc
 defaults
 tls on
@@ -665,9 +745,9 @@ account default
 host smtp.gmail.com
 port 587
 auth on
-user oceantestdigital@gmail.com
-from oceantestdigital@gmail.com
-password jokerman77 
+user your-email@gmail.com
+from your-email@gmail.com
+password your-app-password
 logfile ~/.msmtp.log
 EOF
 chown -R www-data:www-data /etc/msmtprc
@@ -723,7 +803,7 @@ echo "Banner /etc/kyt.txt" >>/etc/ssh/sshd_config
 sed -i 's@DROPBEAR_BANNER=""@DROPBEAR_BANNER="/etc/kyt.txt"@g' /etc/default/dropbear
 
 # Ganti Banner
-wget -O /etc/hokage.txt https://raw.githubusercontent.com/brillianjs/beta/main/files/issue.net
+wget -O /etc/brilltunnel.txt https://raw.githubusercontent.com/brillianjs/beta/main/files/issue.net
 print_success "Fail2ban"
 }
 
@@ -745,21 +825,27 @@ wget -q -O /usr/local/share/xray/geosite.dat "https://github.com/Loyalsoldier/v2
 wget -q -O /usr/local/share/xray/geoip.dat "https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geoip.dat" >/dev/null 2>&1
 wget -O /usr/sbin/ftvpn "${REPO}files/ftvpn" >/dev/null 2>&1
 chmod +x /usr/sbin/ftvpn
-iptables -A FORWARD -m string --string "get_peers" --algo bm -j DROP
-iptables -A FORWARD -m string --string "announce_peer" --algo bm -j DROP
-iptables -A FORWARD -m string --string "find_node" --algo bm -j DROP
-iptables -A FORWARD -m string --algo bm --string "BitTorrent" -j DROP
-iptables -A FORWARD -m string --algo bm --string "BitTorrent protocol" -j DROP
-iptables -A FORWARD -m string --algo bm --string "peer_id=" -j DROP
-iptables -A FORWARD -m string --algo bm --string ".torrent" -j DROP
-iptables -A FORWARD -m string --algo bm --string "announce.php?passkey=" -j DROP
-iptables -A FORWARD -m string --algo bm --string "torrent" -j DROP
-iptables -A FORWARD -m string --algo bm --string "announce" -j DROP
-iptables -A FORWARD -m string --algo bm --string "info_hash" -j DROP
-iptables-save > /etc/iptables.up.rules
-iptables-restore -t < /etc/iptables.up.rules
-netfilter-persistent save
-netfilter-persistent reload
+
+# Setup iptables rules for blocking torrent traffic
+# Ubuntu 24.04 uses nftables backend but iptables commands still work via iptables-nft
+# Ensure iptables-legacy or iptables-nft is available
+if command -v iptables &> /dev/null; then
+    iptables -A FORWARD -m string --string "get_peers" --algo bm -j DROP 2>/dev/null
+    iptables -A FORWARD -m string --string "announce_peer" --algo bm -j DROP 2>/dev/null
+    iptables -A FORWARD -m string --string "find_node" --algo bm -j DROP 2>/dev/null
+    iptables -A FORWARD -m string --algo bm --string "BitTorrent" -j DROP 2>/dev/null
+    iptables -A FORWARD -m string --algo bm --string "BitTorrent protocol" -j DROP 2>/dev/null
+    iptables -A FORWARD -m string --algo bm --string "peer_id=" -j DROP 2>/dev/null
+    iptables -A FORWARD -m string --algo bm --string ".torrent" -j DROP 2>/dev/null
+    iptables -A FORWARD -m string --algo bm --string "announce.php?passkey=" -j DROP 2>/dev/null
+    iptables -A FORWARD -m string --algo bm --string "torrent" -j DROP 2>/dev/null
+    iptables -A FORWARD -m string --algo bm --string "announce" -j DROP 2>/dev/null
+    iptables -A FORWARD -m string --algo bm --string "info_hash" -j DROP 2>/dev/null
+    iptables-save > /etc/iptables.up.rules 2>/dev/null
+    iptables-restore -t < /etc/iptables.up.rules 2>/dev/null
+fi
+netfilter-persistent save 2>/dev/null
+netfilter-persistent reload 2>/dev/null
 
 # remove unnecessary files
 cd
@@ -837,7 +923,7 @@ mesg n || true
 welcome
 EOF
 mkdir -p /root/.info
-curl -sS "ipinfo.io/org?token=7a814b6263b02c" > /root/.info/.isp
+curl -sS ipinfo.io/org > /root/.info/.isp
 cat >/etc/cron.d/xp_all <<-END
 		SHELL=/bin/sh
 		PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
@@ -876,7 +962,7 @@ cat >/etc/cron.d/xp_all <<-END
     cat >/home/daily_reboot <<-END
 		5
 	END
-curl -sS "ipinfo.io/city?token=7a814b6263b02c" > /root/.info/.city
+curl -sS ipinfo.io/city > /root/.info/.city
 cat >/etc/systemd/system/rc-local.service <<EOF
 [Unit]
 Description=/etc/rc.local
@@ -1016,7 +1102,7 @@ echo ""
 echo ""
 echo "------------------------------------------------------------"
 echo ""
-echo "===============-[ SCRIPT BY HOKAGE LEGEND ]-==============="
+echo "===============-[ SCRIPT BY BrillTunnel ]-==============="
 echo -e ""
 echo ""
 echo "" | tee -a log-install.txt

@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  brilltunnel:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: brilltunnel-test
+    hostname: brilltunnel-vps
+    privileged: true
+    stdin_open: true
+    tty: true
+    ports:
+      - "2222:22"      # SSH
+      - "8080:80"      # HTTP
+      - "8443:443"     # HTTPS
+      - "8888:8888"    # Web UI Panel
+      - "3001:3001"    # API Server
+    volumes:
+      - ./menu:/root/brilltunnel/menu:rw
+      - ./files:/root/brilltunnel/files:rw
+    environment:
+      - TZ=Asia/Jakarta
+    networks:
+      - brilltunnel-net
+    restart: unless-stopped
+
+networks:
+  brilltunnel-net:
+    driver: bridge
